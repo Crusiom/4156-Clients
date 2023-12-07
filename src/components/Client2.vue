@@ -76,7 +76,7 @@ export default {
     goToDiscussion(token) {
       const that = this;
       this.$router.push({
-        path: "/client-2/dashboard",
+        path: "/dashboard",
         query: {
           token: "Bearer " + token,
         },

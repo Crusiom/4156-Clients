@@ -1,6 +1,9 @@
 # health-discussion-platform
 
 ## Project setup
+
+- change the port of server to 3000
+
 ```
 npm install
 ```
