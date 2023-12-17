@@ -24,7 +24,7 @@
       <el-menu
         default-active="0"
         mode="horizontal"
-        @select="handleSelect"
+        @select="changeCategory"
         background-color="#9FCBEA"
         text-color="#fff"
         active-text-color="#ffd04b"
@@ -70,9 +70,14 @@
               </div>
               <br />
               <hr />
-              <div class="comments-section">
+              <div>
                 <h4 style="display: inline">Comments</h4>
-                <br /><br /><br /><br />
+                <el-button type="primary" @click="getComments(item._id, index)" style="margin-left: 20px;">Show Comment</el-button>
+                <hr />
+                <div v-for="(commentItem, commentIndex) in comment[index]" :key="commentIndex">
+                  <i class="el-icon-user-solid"></i> : {{ commentItem.content }}
+                </div>
+                <br />
                 <el-form
                   label-width="80px"
                   style="
@@ -84,10 +89,11 @@
                   <el-form-item label="Comment" prop="comment">
                     <el-input
                       placeholder="Please Enter your comment"
+                      v-model="commentForm.content"
                     ></el-input>
                   </el-form-item>
                   <el-form-item>
-                    <el-button type="primary">Publish Comment</el-button>
+                    <el-button type="primary" @click="postComment(item._id, comment[index])">Publish Comment</el-button>
                   </el-form-item>
                 </el-form>
               </div>
@@ -135,6 +141,7 @@ export default {
       token: "",
       loading: false,
       healthPosts: [],
+      comment: [],
       newsTypes: [
         "Internal",
         "Oncology",
@@ -149,6 +156,13 @@ export default {
         title: "",
         content: "",
         category: ""
+      },
+      commentForm: {
+        eventId: "",
+        title: "default",
+        content: "",
+        category: "default",
+        event: "Forum"
       }
     };
   },
@@ -163,13 +177,74 @@ export default {
       })
       .then((res) => {
         console.log(res.data.data);
-        that.localtion.reload();
+        window.location.reload();
       })
       .catch((error) => {
         console.log(error);
+        alert("publish post failed...")
+      });
+    },
+    changeCategory(category) {
+      const that = this
+      this.$axios
+      .get(`/api/v1/events?category=${category}`,{
+        headers: {
+          Authorization: that.token,
+        },
+      })
+      .then((res) => {
+        that.comment = [];
+        that.healthPosts = res.data.data;
+        for (let i = 0; i < that.healthPosts.length; i++) {
+          that.comment.push([]);
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+        alert("change category failed...")
+      });
+    },
+    getComments(eventId, index) {
+      const that = this
+      this.$axios
+      .get(`/api/v1/reviews/event/${eventId}`,{
+        headers: {
+          Authorization: that.token,
+        },
+      })
+      .then((res) => {
+        let temp = [];
+        for (let i = 0; i < that.comment.length; i++) {
+          temp.push(that.comment[i]);
+        }
+        temp[index] = res.data.data;
+        that.comment = temp;
+      })
+      .catch((error) => {
+        console.log(error);
+        alert("get comments failed...")
+      });
+    },
+    postComment(eventId, item) {
+      const that = this
+      that.commentForm.eventId = eventId;
+      this.$axios
+      .post(`/api/v1/reviews`, that.commentForm, {
+        headers: {
+          Authorization: that.token,
+        },
+      })
+      .then((res) => {
+        console.log(res.data.data);
+        item.push({content: that.commentForm.content})
+      })
+      .catch((error) => {
+        console.log(error);
+        alert("post comments failed...")
       });
     }
   },
+
   created() {
     if (this.$route.query) {
       this.token = this.$route.query.token;
@@ -183,6 +258,10 @@ export default {
       })
       .then((res) => {
         that.healthPosts = res.data.data;
+        that.comment = [];
+        for (let i = 0; i < that.healthPosts.length; i++) {
+          that.comment.push([]);
+        }
         console.log(res.data.data);
       })
       .catch((error) => {
